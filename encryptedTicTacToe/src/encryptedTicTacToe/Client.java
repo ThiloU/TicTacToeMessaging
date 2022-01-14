@@ -18,16 +18,4 @@ public class Client {
 		// Closing socket
 		soc.close();
 	}
-	
-	
-	public void sendMessage(String msg) throws IOException {
-		DataOutputStream d = new DataOutputStream(soc.getOutputStream());	// create outputStream to send messsages on
-
-		// Message to be displayed
-		d.writeUTF(msg);
-
-		// Flushing out internal buffers
-		d.flush();
-
-	}
 }

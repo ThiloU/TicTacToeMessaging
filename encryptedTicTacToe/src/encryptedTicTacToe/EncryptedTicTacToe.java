@@ -12,6 +12,7 @@ public class EncryptedTicTacToe {
 	public static void main(String[] args) throws IOException {
 
 		System.out.print("s = Server\nc = Client\nModus: ");
+		@SuppressWarnings("resource")
 		Scanner scanner = new Scanner(System.in); // create scanner objet
 		String modeString = scanner.nextLine(); // read user input
 		if (modeString.equals("s")) {
@@ -47,17 +48,25 @@ public class EncryptedTicTacToe {
 		}
 
 		System.out.print("Nachicht eingeben (leer lassen um auf Nachrichten zu warten): ");
-		String msg = scanner.nextLine();
-		if (msg.equals("")) {
-			DataInputStream dis = new DataInputStream(connection.getInputStream()); // creating inputStream to read data from
-			while (true) {
-				String str = (String) dis.readUTF(); // extract message from response
-				System.out.println("Nachricht: " + str);
-			}
-		} else {
-			DataOutputStream d = new DataOutputStream(connection.getOutputStream()); // create outputStream to send messsages on
-			d.writeUTF(msg);		// Message to be displayed
-			d.flush();				// Flushing out internal buffers
+		while (true) {
+			String msg = scanner.nextLine();
+			DataOutputStream d = new DataOutputStream(connection.getOutputStream()); // create outputStream to send
+			// messsages on
+			d.writeUTF(msg); // Message to be displayed
+			d.flush(); // Flushing out internal buffers
+			System.out.println("here1");
+			DataInputStream dis = new DataInputStream(connection.getInputStream()); // creating inputStream to read data
+			System.out.println("here2");
+			// from
+//			while (true) {
+			String str = (String) dis.readUTF(); // extract message from response
+			System.out.println("here3");
+
+			System.out.println("Nachricht: " + str);
+//			}
+//		} else {
+
+//		}
 		}
 	}
 }

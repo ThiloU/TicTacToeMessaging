@@ -25,17 +25,6 @@ public class Server {
 	}
 
 	
-	public String receiveMessages() throws IOException {
-		// Waiting for a connection
-
-		DataInputStream dis = new DataInputStream(soc.getInputStream()); // creating inputStream to read data from
-
-		String str = (String) dis.readUTF();		// extract message from response
-
-		return str;
-
-	}
-	
 	public Socket waitForClientConnection() throws IOException {
 		soc = ss.accept();
 		return soc;
