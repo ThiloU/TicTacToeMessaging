@@ -4,38 +4,30 @@ import java.io.*;
 import java.net.*;
 
 public class Client {
-	public void main() {
+	Socket soc;
+	public Socket connect(String ip, int port) throws IOException {
 
-		// Try block to check if exception occurs
-		try {
-
-			// Creating Socket class object and
-			// initializing Socket
-			Socket soc = new Socket("localhost", 6666);
-
-			DataOutputStream d = new DataOutputStream(soc.getOutputStream());
-
-			// Message to be displayed
-			d.writeUTF("Hello GFG Readers!");
-
-			// Flushing out internal buffers,
-			// optimizing for better performance
-			d.flush();
-
-			// Closing the connections
-
-			// Closing DataOutputStream
-			d.close();
-			// Closing socket
-			soc.close();
-		}
-
-		// Catch block to handle exceptions
-		catch (Exception e) {
-
-			// Print the exception on the console
-			System.out.println(e);
-		}
+		// Creating Socket class object and
+		// initializing Socket
+		soc = new Socket(ip, port);
+		return soc;
 	}
+	
+	
+	public void disconnect() throws IOException {
+		// Closing socket
+		soc.close();
+	}
+	
+	
+	public void sendMessage(String msg) throws IOException {
+		DataOutputStream d = new DataOutputStream(soc.getOutputStream());	// create outputStream to send messsages on
 
+		// Message to be displayed
+		d.writeUTF(msg);
+
+		// Flushing out internal buffers
+		d.flush();
+
+	}
 }
