@@ -2,23 +2,30 @@ package encryptedTicTacToe;
 
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class EncryptedTicTacToe {
 
 	static int port = 6666;
 	static Socket connection;
-	static Chat chat;
-	
 
-	public static void main(String[] args) throws IOException {
-		
-		chat = new Chat();
+	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeyException,
+			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, ClassNotFoundException {
+
+		Chat chat = new Chat();
+		Crypt crypt = new Crypt();
 		System.out.print("s = Server\nc = Client\nModus: ");
 		@SuppressWarnings("resource")
 		Scanner scanner = new Scanner(System.in); // create scanner objet
 		String modeString = scanner.nextLine(); // read user input
-		
+
 		if (modeString.equals("s")) {
 			// start server
 			System.out.println("Versuche, einen Server zu starten...");
@@ -28,7 +35,8 @@ public class EncryptedTicTacToe {
 				System.out.println("Server gestartet!\nWarte auf Verbindung mit Client...");
 				connection = server.waitForClientConnection();
 				System.out.println("Client verbunden!");
-				chat.main(connection);
+				crypt.receiveSecureConnectionKey(connection, chat);
+				chat.main(connection, crypt);
 			} catch (java.net.BindException e) {
 				System.out.println("ERROR: Es läuft bereits ein Server");
 			}
@@ -46,11 +54,12 @@ public class EncryptedTicTacToe {
 				Client client = new Client();
 				connection = client.connect(ip, port);
 				System.out.println("Verbindung hergestellt!");
-				chat.main(connection);
+				crypt.sendSecureConnectionKey(connection, chat);
+				chat.main(connection, crypt);
 			} catch (java.net.ConnectException | java.net.UnknownHostException e) {
 				System.out.println("ERROR: Kein Server gefunden");
 			}
-			
+
 		} else {
 			System.out.println("ERROR: Ungültige Eingabe");
 		}
