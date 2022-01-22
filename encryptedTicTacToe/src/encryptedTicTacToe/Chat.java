@@ -12,57 +12,51 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class Chat {
-	public void main(Socket connection, Crypt crypt) throws IOException, NoSuchAlgorithmException, InvalidKeyException,
+	public void main(final Socket connection, final Crypt crypt) throws IOException, NoSuchAlgorithmException, InvalidKeyException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		System.out.println("Chatverbindung wurde hergestellt");
 		new Crypt();
-		new Thread(() -> { // lambda expression to start a thread
-			try {
-				while (true) {
-					DataInputStream dis = new DataInputStream(connection.getInputStream()); // creating inputStream to
-																							// read data
-					String str = (String) dis.readUTF(); // extract message from response
-					System.out.println(">>> " + crypt.decryptMessage(str));
+		
+		Thread messageListener = new Thread() {
+		    public void run() {
+		    	try {
+					while (true) {
+						String msg = receiveEncryptedMessage(connection, crypt);
+						System.out.println(">>>" + msg);
 
+					}
+				} catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+						| IllegalBlockSizeException | BadPaddingException |  ClassNotFoundException e) {
+					e.printStackTrace();
 				}
-			} catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
-					| IllegalBlockSizeException | BadPaddingException e) {
-				e.printStackTrace();
-			}
-		}).start();
+		    }  
+		};
+		
+		messageListener.start();
 
 		@SuppressWarnings("resource")
 		Scanner scanner = new Scanner(System.in);
 		while (true) {
 			String msg = scanner.nextLine();
-			DataOutputStream d = new DataOutputStream(connection.getOutputStream()); // create outputStream to send
-																						// messsages on
-			d.writeUTF(crypt.encryptMessage(msg)); // Message to be displayed
-			d.flush(); // Flushing out internal buffers
+			sendEncryptedMessage(connection, crypt, msg);
 		}
 	}
 
-	public String receiveMessage(Socket connection) throws IOException {
-		DataInputStream dis = new DataInputStream(connection.getInputStream()); // creating inputStream to
-		// read data
-		String str = (String) dis.readUTF(); // extract message from response
-//		dis.close();
-		return str;
+	public String receiveEncryptedMessage(Socket connection, Crypt crypt) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
+		byte[] msgBytes = receiveBytes(connection);
+		String msg = crypt.decryptMessage(msgBytes);
+		return msg;
 	}
 
-	public void sendMessage(Socket connection, String msg) throws IOException {
-		DataOutputStream d = new DataOutputStream(connection.getOutputStream()); // create outputStream to send
-		// messsages on
-		d.writeUTF(msg); // Message to be displayed
-		d.flush(); // Flushing out internal buffers
-//		d.close();
+	public void sendEncryptedMessage(Socket connection, Crypt crypt, String msg) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+		byte[] msgBytes = crypt.encryptMessage(msg);
+		sendBytes(connection, msgBytes);
 	}
 
 	public PublicKey receivePublicKey(Socket connection) throws IOException, ClassNotFoundException {
 		ObjectInputStream dis = new ObjectInputStream(connection.getInputStream()); // creating inputStream to
 																					// read data
 		PublicKey msg = (PublicKey) dis.readObject();
-		System.out.printf("receiveMessage: %s\n", msg);
 //		dis.close();
 		return msg;
 	}
@@ -70,7 +64,6 @@ public class Chat {
 	public void sendPublicKey(Socket connection, PublicKey msg) throws IOException {
 		ObjectOutputStream d = new ObjectOutputStream(connection.getOutputStream()); // create outputStream to send
 																						// messsages on
-		System.out.printf("sendMessage: %s\n", msg);
 		d.writeObject(msg);
 		d.flush(); // Flushing out internal buffers
 //		d.close();

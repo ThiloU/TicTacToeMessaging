@@ -23,7 +23,7 @@ public class EncryptedTicTacToe {
 		Crypt crypt = new Crypt();
 		System.out.print("s = Server\nc = Client\nModus: ");
 		@SuppressWarnings("resource")
-		Scanner scanner = new Scanner(System.in); // create scanner objet
+		Scanner scanner = new Scanner(System.in); // create scanner object
 		String modeString = scanner.nextLine(); // read user input
 
 		if (modeString.equals("s")) {
@@ -35,7 +35,9 @@ public class EncryptedTicTacToe {
 				System.out.println("Server gestartet!\nWarte auf Verbindung mit Client...");
 				connection = server.waitForClientConnection();
 				System.out.println("Client verbunden!");
+				System.out.println("Initiiere verschlüsselte Verbindung...");
 				crypt.receiveSecureConnectionKey(connection, chat);
+				System.out.println("Verbindung ist verschlüsselt!");
 				chat.main(connection, crypt);
 			} catch (java.net.BindException e) {
 				System.out.println("ERROR: Es läuft bereits ein Server");
@@ -54,7 +56,9 @@ public class EncryptedTicTacToe {
 				Client client = new Client();
 				connection = client.connect(ip, port);
 				System.out.println("Verbindung hergestellt!");
+				System.out.println("Initiiere verschlüsselte Verbindung...");
 				crypt.sendSecureConnectionKey(connection, chat);
+				System.out.println("Verbindung ist verschlüsselt!");
 				chat.main(connection, crypt);
 			} catch (java.net.ConnectException | java.net.UnknownHostException e) {
 				System.out.println("ERROR: Kein Server gefunden");

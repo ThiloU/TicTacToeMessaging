@@ -5,15 +5,14 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Base64;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Crypt {
 
-	SecretKey aesKey;
-	PrivateKey privateKey;
+	private SecretKey aesKey;
+	private PrivateKey privateKey;
 
 	public Crypt() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException {
@@ -33,7 +32,6 @@ public class Crypt {
 		byte[] aesKeyEncrypted = cipher.doFinal(aesKey.getEncoded()); // encrypt the aes key with the public rsa-key
 																		// from other client
 		chat.sendBytes(connection, aesKeyEncrypted); // send encrypted aes-key back to other client
-		System.out.println("AES-Key generated is: " + aesKey);
 	}
 
 	public void receiveSecureConnectionKey(Socket connection, Chat chat)
@@ -55,22 +53,21 @@ public class Crypt {
 
 	}
 
-	public String encryptMessage(String msg) throws InvalidKeyException, NoSuchAlgorithmException,
+	public byte[] encryptMessage(String msg) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		Cipher encryptCipher = Cipher.getInstance("AES"); // initialise encryptor
 		encryptCipher.init(Cipher.ENCRYPT_MODE, aesKey);
 		byte[] encryptedMessageBytes = encryptCipher.doFinal(msg.getBytes(StandardCharsets.UTF_8)); // encrypt message
 																									// after converting
 																									// to bytes
-		return Base64.getEncoder().encodeToString(encryptedMessageBytes); // convert message back to string and return
-																			// it
+		return encryptedMessageBytes; // return encrypted message in bytes ready to be sent
 	}
 
-	public String decryptMessage(String msg) throws InvalidKeyException, NoSuchAlgorithmException,
+	public String decryptMessage(byte[] msg) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		Cipher decryptCipher = Cipher.getInstance("AES"); // initialise decryptor
 		decryptCipher.init(Cipher.DECRYPT_MODE, aesKey);
-		byte[] decryptedMessageBytes = decryptCipher.doFinal(Base64.getDecoder().decode(msg)); // decrypt message after
+		byte[] decryptedMessageBytes = decryptCipher.doFinal(msg); // decrypt message after
 																								// converting to base64
 		return new String(decryptedMessageBytes, StandardCharsets.UTF_8); // convert message back to string and return
 																			// it
