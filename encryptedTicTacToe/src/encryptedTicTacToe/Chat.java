@@ -12,76 +12,88 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public class Chat {
-	public void main(final Socket connection, final Crypt crypt) throws IOException, NoSuchAlgorithmException, InvalidKeyException,
-			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+	Socket connection;
+	Crypt crypt;
+	Gui gui;
+	
+	public Chat(Socket connection, Crypt crypt, Gui gui) {
+		this.connection = connection;
+		this.crypt = crypt;
+		this.gui = gui;
+	}
+	
+	
+	public void main() throws IOException, NoSuchAlgorithmException,
+			InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		System.out.println("Chatverbindung wurde hergestellt");
 		new Crypt();
-		
+
 		Thread messageListener = new Thread() {
-		    public void run() {
-		    	try {
+			public void run() {
+				try {
 					while (true) {
-						String msg = receiveEncryptedMessage(connection, crypt);
+						String msg = receiveEncryptedMessage();
+						gui.printMessage(msg, "Nutzer 2");
 						System.out.println(">>>" + msg);
 
 					}
-				} catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
-						| IllegalBlockSizeException | BadPaddingException |  ClassNotFoundException e) {
-					e.printStackTrace();
+				} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+						| IllegalBlockSizeException | BadPaddingException | ClassNotFoundException | IOException e) {
+					gui.setStatus("ERROR", "Verbindung zum Gesprächspartner unterbrochen");
 				}
-		    }  
+			}
 		};
-		
+
 		messageListener.start();
 
 		@SuppressWarnings("resource")
 		Scanner scanner = new Scanner(System.in);
 		while (true) {
 			String msg = scanner.nextLine();
-			sendEncryptedMessage(connection, crypt, msg);
+			sendEncryptedMessage(msg);
 		}
 	}
 
-	public String receiveEncryptedMessage(Socket connection, Crypt crypt) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
-		byte[] msgBytes = receiveBytes(connection);
+	public String receiveEncryptedMessage()
+			throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+			IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
+		byte[] msgBytes = receiveBytes();
 		String msg = crypt.decryptMessage(msgBytes);
 		return msg;
 	}
 
-	public void sendEncryptedMessage(Socket connection, Crypt crypt, String msg) throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+	public void sendEncryptedMessage(String msg)
+			throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+			IllegalBlockSizeException, BadPaddingException {
 		byte[] msgBytes = crypt.encryptMessage(msg);
-		sendBytes(connection, msgBytes);
+		sendBytes(msgBytes);
 	}
 
-	public PublicKey receivePublicKey(Socket connection) throws IOException, ClassNotFoundException {
+	public PublicKey receivePublicKey() throws IOException, ClassNotFoundException {
 		ObjectInputStream dis = new ObjectInputStream(connection.getInputStream()); // creating inputStream to
 																					// read data
 		PublicKey msg = (PublicKey) dis.readObject();
-//		dis.close();
 		return msg;
 	}
 
-	public void sendPublicKey(Socket connection, PublicKey msg) throws IOException {
+	public void sendPublicKey(PublicKey msg) throws IOException {
 		ObjectOutputStream d = new ObjectOutputStream(connection.getOutputStream()); // create outputStream to send
 																						// messsages on
 		d.writeObject(msg);
 		d.flush(); // Flushing out internal buffers
-//		d.close();
 	}
 
-	public byte[] receiveBytes(Socket connection) throws IOException, ClassNotFoundException {
+	public byte[] receiveBytes() throws IOException, ClassNotFoundException {
 		ObjectInputStream dis = new ObjectInputStream(connection.getInputStream()); // creating inputStream to
 																					// read data
 		byte[] msg = (byte[]) dis.readObject();
-//		dis.close();
 		return msg;
 	}
 
-	public void sendBytes(Socket connection, byte[] msg) throws IOException {
+	public void sendBytes(byte[] msg) throws IOException {
 		ObjectOutputStream d = new ObjectOutputStream(connection.getOutputStream()); // create outputStream to send
 																						// messsages on
 		d.writeObject(msg);
 		d.flush(); // Flushing out internal buffers
-//		d.close();
 	}
 }

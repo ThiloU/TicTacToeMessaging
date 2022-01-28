@@ -1,7 +1,6 @@
 package encryptedTicTacToe;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -14,15 +13,14 @@ public class Crypt {
 	private SecretKey aesKey;
 	private PrivateKey privateKey;
 
-	public Crypt() throws NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException {
+	public Crypt() {
 
 	}
 
-	public void sendSecureConnectionKey(Socket connection, Chat chat)
+	public void sendSecureConnectionKey(Chat chat)
 			throws IOException, InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
-		PublicKey publicKey = chat.receivePublicKey(connection); // receive public rsa key from other client
+		PublicKey publicKey = chat.receivePublicKey(); // receive public rsa key from other client
 
 		KeyGenerator generator = KeyGenerator.getInstance("AES"); // generate aes key to later encrypt all messages with
 		generator.init(128); // The AES key size in number of bits
@@ -31,10 +29,10 @@ public class Crypt {
 		cipher.init(Cipher.PUBLIC_KEY, publicKey);
 		byte[] aesKeyEncrypted = cipher.doFinal(aesKey.getEncoded()); // encrypt the aes key with the public rsa-key
 																		// from other client
-		chat.sendBytes(connection, aesKeyEncrypted); // send encrypted aes-key back to other client
+		chat.sendBytes(aesKeyEncrypted); // send encrypted aes-key back to other client
 	}
 
-	public void receiveSecureConnectionKey(Socket connection, Chat chat)
+	public void receiveSecureConnectionKey(Chat chat)
 			throws NoSuchAlgorithmException, IOException, IllegalBlockSizeException, BadPaddingException,
 			InvalidKeyException, NoSuchPaddingException, ClassNotFoundException {
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA"); // assymetric encryption keys, used to
@@ -43,9 +41,9 @@ public class Crypt {
 		KeyPair keyPair = keyPairGenerator.genKeyPair();
 		privateKey = keyPair.getPrivate();
 		PublicKey publicKey = keyPair.getPublic();
-		chat.sendPublicKey(connection, publicKey); // send rsa key in string format to other
+		chat.sendPublicKey(publicKey); // send rsa key in string format to other
 													// client for him to encrypt the AES-key
-		byte[] aesKeyEncrypted = chat.receiveBytes(connection); // receive encrypted aes-key
+		byte[] aesKeyEncrypted = chat.receiveBytes(); // receive encrypted aes-key
 		Cipher cipher = Cipher.getInstance("RSA");
 		cipher.init(Cipher.PRIVATE_KEY, privateKey);
 		byte[] decryptedAesKeyBytes = cipher.doFinal(aesKeyEncrypted);// decrypt the aes-key sent from the other client
