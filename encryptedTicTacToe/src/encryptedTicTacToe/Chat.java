@@ -5,26 +5,28 @@ import java.net.*;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.swing.text.BadLocationException;
 
 public class Chat {
 	Socket connection;
 	Crypt crypt;
 	Gui gui;
-	
-	public Chat(Socket connection, Crypt crypt, Gui gui) {
+	String ownUsername;
+	String strangerUsername;
+
+	public Chat(Socket connection, Crypt crypt, Gui gui, String ownUsername) {
 		this.connection = connection;
 		this.crypt = crypt;
 		this.gui = gui;
+		this.ownUsername = ownUsername;
 	}
-	
-	
-	public void main() throws IOException, NoSuchAlgorithmException,
-			InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+
+	public void startMessageListener() throws IOException, NoSuchAlgorithmException, InvalidKeyException,
+			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		System.out.println("Chatverbindung wurde hergestellt");
 		new Crypt();
 
@@ -33,38 +35,33 @@ public class Chat {
 				try {
 					while (true) {
 						String msg = receiveEncryptedMessage();
-						gui.printMessage(msg, "Nutzer 2");
+						gui.printMessage(msg, strangerUsername);
 						System.out.println(">>>" + msg);
 
 					}
 				} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
 						| IllegalBlockSizeException | BadPaddingException | ClassNotFoundException | IOException e) {
-					gui.setStatus("ERROR", "Verbindung zum Gesprächspartner unterbrochen");
+					gui.setStatus("FEHLER", "Verbindung zum Gesprächspartner unterbrochen");
+					gui.showMessage("Verbindung zum Gesprächspartner unterbrochen");
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		};
 
 		messageListener.start();
-
-		@SuppressWarnings("resource")
-		Scanner scanner = new Scanner(System.in);
-		while (true) {
-			String msg = scanner.nextLine();
-			sendEncryptedMessage(msg);
-		}
 	}
 
-	public String receiveEncryptedMessage()
-			throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
+	public String receiveEncryptedMessage() throws IOException, InvalidKeyException, NoSuchAlgorithmException,
+			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
 		byte[] msgBytes = receiveBytes();
 		String msg = crypt.decryptMessage(msgBytes);
 		return msg;
 	}
 
-	public void sendEncryptedMessage(String msg)
-			throws IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
-			IllegalBlockSizeException, BadPaddingException {
+	public void sendEncryptedMessage(String msg) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
+			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		byte[] msgBytes = crypt.encryptMessage(msg);
 		sendBytes(msgBytes);
 	}
@@ -95,5 +92,18 @@ public class Chat {
 																						// messsages on
 		d.writeObject(msg);
 		d.flush(); // Flushing out internal buffers
+	}
+
+	public void exchangeUsernames(boolean sendFirst)
+			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
+			BadPaddingException, IOException, ClassNotFoundException {
+		if (sendFirst) {
+			sendEncryptedMessage(ownUsername);
+			strangerUsername = receiveEncryptedMessage();
+		} else {
+			strangerUsername = receiveEncryptedMessage();
+			sendEncryptedMessage(ownUsername);
+		}
+
 	}
 }
