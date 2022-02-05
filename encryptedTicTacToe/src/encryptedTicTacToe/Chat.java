@@ -35,8 +35,7 @@ public class Chat {
 				try {
 					while (true) {
 						String msg = receiveEncryptedMessage();
-						gui.printMessage(msg, strangerUsername);
-						System.out.println(">>>" + msg);
+						gui.printMessage(msg, false);
 
 					}
 				} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
@@ -104,6 +103,7 @@ public class Chat {
 			strangerUsername = receiveEncryptedMessage();
 			sendEncryptedMessage(ownUsername);
 		}
+		gui.setStrangerUsername(strangerUsername);
 
 	}
 }

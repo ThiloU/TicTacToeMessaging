@@ -12,22 +12,25 @@ import javax.crypto.NoSuchPaddingException;
 
 
 public class EncryptedTicTacToe {
-	static int port = 6666;
 	static Socket connection;
 
 	public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InvalidKeyException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, ClassNotFoundException, InterruptedException {
 		
+		
 		Crypt crypt = new Crypt();
 		Gui gui = new Gui();
+		TicTacToe tic = new TicTacToe(gui);
+		gui.setTicTacToe(tic);
 		gui.setup();
-		while(!gui.setupDone) {
+		while(!gui.setupDone) {	// wait until setup is done by user
 			Thread.sleep(100);
 		}
 		gui.main();
 		
 		String mode = gui.mode;
 		String ip = gui.ip;
+		int port = gui.port;
 		String username = gui.username;
 
 		if (mode.equals("s")) {
