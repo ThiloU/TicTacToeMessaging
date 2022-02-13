@@ -24,6 +24,7 @@ import javax.swing.text.StyledDocument;
 public class Gui {
 	JLabel status = new JLabel();
 	JTextPane textPane = new JTextPane();
+	JButton startButton;
 	StyledDocument doc = textPane.getStyledDocument();
 
 	SimpleAttributeSet left = new SimpleAttributeSet();
@@ -60,9 +61,24 @@ public class Gui {
 	public void setStatus(String msg) { // Overloading to get optional parameter "prefix"
 		setStatus("Status", msg);
 	}
-
+	
+	
+	public void setGameButtonText(String text){
+		startButton.setEnabled(true);
+		if(text.equals("start")) {
+			startButton.setText("Spiel starten");
+			if(mode.equals("c")) {
+				startButton.setEnabled(false);
+			}
+		} else if( text.equals("reset")) {
+			startButton.setText("Für Reset abstimmen");
+		} else {
+			startButton.setText(text);
+		}
+	}
+	
+	
 	public void showMessage(String msg) {
-
 		JOptionPane.showMessageDialog(new JFrame(), msg);
 	}
 
@@ -73,9 +89,13 @@ public class Gui {
 		dialog.setVisible(true);
 	}
 
-	public void printMessage(String message, boolean selfIsAuthor) throws BadLocationException {
+	public void printMessage(String message, boolean selfIsAuthor)
+			throws BadLocationException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+			IllegalBlockSizeException, BadPaddingException, IOException {
 
-		tic.handleCommands(message, selfIsAuthor);
+		if(message.startsWith("/")) {	// if the message is a command, don't show it
+			return;
+		}
 
 		if (selfIsAuthor) {
 			String data = message + " [" + new SimpleDateFormat("HH:mm").format(new Date()) + "]";
@@ -201,7 +221,7 @@ public class Gui {
 		});
 
 		setupWindow.setVisible(true);
-		// Also TODO: Amogus
+		//TODO: Amogus
 	}
 
 	public void main() {
@@ -217,7 +237,7 @@ public class Gui {
 		// Creating the panel at bottom and adding components
 		JPanel panel = new JPanel(); // the panel is not visible in output
 		final JCheckBox showTicTacToe = new JCheckBox("TicTacToe zeigen");
-		JLabel label = new JLabel("Nachricht: ");
+		JLabel label = new JLabel("Nachricht als " + username + " senden: ");
 		final JTextField tf = new JTextField(10); // set length of input field to 10
 		JButton send = new JButton("Senden");
 		panel.add(label); // Components Added using Flow Layout
@@ -232,12 +252,15 @@ public class Gui {
 		StyleConstants.setAlignment(left, StyleConstants.ALIGN_LEFT);
 		StyleConstants.setAlignment(right, StyleConstants.ALIGN_RIGHT);
 
-		JButton resetButton = new JButton("Für Reset abstimmen");
+		startButton = new JButton("Spiel starten");
+		if(mode.equals("c")) {
+			startButton.setEnabled(false);
+		}
 		final JPanel ticTacToeContent = new JPanel();
 		ticTacToeContent.setVisible(false);
 		ticTacToeContent.setLayout(new GridBagLayout());
 		final JPanel ticTacToeBoard = new JPanel(new GridLayout(3, 3));
-		
+
 		GridBagConstraints c1 = new GridBagConstraints();
 		c1.gridy = 0;
 		c1.weighty = 0.8;
@@ -249,7 +272,9 @@ public class Gui {
 		c1.weighty = 0.2;
 		c1.weightx = 1;
 		c1.fill = GridBagConstraints.HORIZONTAL;
-		ticTacToeContent.add(resetButton, c1);
+		ticTacToeContent.add(startButton, c1);
+		
+		
 		ticTacToeContent.setBorder(BorderFactory.createTitledBorder("TicTacToe"));
 
 		ActionListener ticTacToeListener = new ActionListener() {
@@ -258,12 +283,9 @@ public class Gui {
 				for (int i = 0; i < 9; i++) {
 					if (e.getSource() == ticTacToeButton[i]) {
 						try {
-							printMessage("/set " + i, true);
-							chat.sendEncryptedMessage("/set " + i);
+							tic.handleCommands("/set " + i, true);
 						} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
-								| IllegalBlockSizeException | BadPaddingException | IOException
-								| BadLocationException e1) {
-							// TODO Auto-generated catch block
+								| IllegalBlockSizeException | BadPaddingException | IOException e1) {
 							e1.printStackTrace();
 						}
 					}
@@ -311,10 +333,13 @@ public class Gui {
 		c.weightx = 0;
 		c.weighty = 0;
 		c.gridy = 2;
+		c.gridwidth = 2;
 		c.fill = GridBagConstraints.HORIZONTAL;
 		frame.add(panel, c);
 
 		frame.setVisible(true);
+		frame.setMinimumSize(new Dimension(600, 400));
+		frame.getRootPane().setDefaultButton(send);
 
 		send.addActionListener(new ActionListener() {
 
@@ -322,17 +347,17 @@ public class Gui {
 			public void actionPerformed(ActionEvent e) { // send a message
 				try {
 					if (!tf.getText().trim().isEmpty()) { // if the string contains something other than spaces
-						chat.sendEncryptedMessage(tf.getText());
-						printMessage(tf.getText(), true);
-						tf.setText("");
+						if(tf.getText().startsWith("/")) {
+							showNonBlockingMessage("Prefix \"/\" ist nicht erlaubt");
+						} else {
+							chat.sendEncryptedMessage(tf.getText());
+							printMessage(tf.getText(), true);
+							tf.setText("");
+						}
 					}
 
 				} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
-						| IllegalBlockSizeException | BadPaddingException | IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (BadLocationException e1) {
-					// TODO Auto-generated catch block
+						| IllegalBlockSizeException | BadPaddingException | IOException | BadLocationException e1) {
 					e1.printStackTrace();
 				}
 			}
@@ -350,20 +375,22 @@ public class Gui {
 			}
 
 		});
-
-		resetButton.addActionListener(new ActionListener() {
-
+		
+		startButton.addActionListener(new ActionListener() {
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
-					printMessage("/resetgame", true);
-					chat.sendEncryptedMessage("/resetgame");
-				} catch (BadLocationException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+					if(startButton.getText().equals("Spiel starten")) {
+						tic.startGame();
+					} else {
+						tic.handleCommands("/resetgame", true);
+						chat.sendEncryptedMessage("/resetgame");
+					}
+				} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
 						| IllegalBlockSizeException | BadPaddingException | IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-
 			}
 		});
 	}

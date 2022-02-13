@@ -42,12 +42,14 @@ public class EncryptedTicTacToe {
 				gui.setStatus("Server gestartet! Warte auf Verbindung mit Client...");
 				connection = server.waitForClientConnection();
 				gui.setStatus("Client verbunden! Initiiere verschlüsselte Verbindung...");
-				Chat chat = new Chat(connection, crypt, gui, username);
+				Chat chat = new Chat(connection, crypt, gui, username, tic);
 				gui.setChat(chat);
+				tic.setChat(chat);
 				crypt.receiveSecureConnectionKey(chat);
 				gui.setStatus("Verbindung ist verschlüsselt!");
 				chat.exchangeUsernames(true);
 				chat.startMessageListener();
+
 			} catch (java.net.BindException e) {
 				gui.showMessage("FEHLER: Es läuft bereits ein Server");
 				System.exit(1);
@@ -60,8 +62,9 @@ public class EncryptedTicTacToe {
 				Client client = new Client();
 				connection = client.connect(ip, port);
 				gui.setStatus("Verbindung hergestellt! Initiiere verschlüsselte Verbindung...");
-				Chat chat = new Chat(connection, crypt, gui, username);
+				Chat chat = new Chat(connection, crypt, gui, username, tic);
 				gui.setChat(chat);
+				tic.setChat(chat);
 				crypt.sendSecureConnectionKey(chat);
 				gui.setStatus("Verbindung ist verschlüsselt!");
 				chat.exchangeUsernames(false);

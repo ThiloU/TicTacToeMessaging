@@ -15,14 +15,16 @@ public class Chat {
 	Socket connection;
 	Crypt crypt;
 	Gui gui;
+	TicTacToe tic;
 	String ownUsername;
 	String strangerUsername;
 
-	public Chat(Socket connection, Crypt crypt, Gui gui, String ownUsername) {
+	public Chat(Socket connection, Crypt crypt, Gui gui, String ownUsername, TicTacToe tic) {
 		this.connection = connection;
 		this.crypt = crypt;
 		this.gui = gui;
 		this.ownUsername = ownUsername;
+		this.tic = tic;
 	}
 
 	public void startMessageListener() throws IOException, NoSuchAlgorithmException, InvalidKeyException,
@@ -35,6 +37,7 @@ public class Chat {
 				try {
 					while (true) {
 						String msg = receiveEncryptedMessage();
+						tic.handleCommands(msg, false);
 						gui.printMessage(msg, false);
 
 					}
@@ -52,6 +55,7 @@ public class Chat {
 		messageListener.start();
 	}
 
+		
 	public String receiveEncryptedMessage() throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
 		byte[] msgBytes = receiveBytes();

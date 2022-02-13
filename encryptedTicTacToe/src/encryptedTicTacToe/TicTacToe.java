@@ -1,8 +1,19 @@
 package encryptedTicTacToe;
 
+import java.util.concurrent.ThreadLocalRandom;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 public class TicTacToe {
 
 	Gui gui;
+	Chat chat;
 
 	String[] ticTacToeField = new String[9]; // create array to store up to 9 moves
 
@@ -11,11 +22,12 @@ public class TicTacToe {
 
 	String ownSymbol;
 	String strangerSymbol;
-	boolean firstMove = true;
 	boolean didFirstMove;
+	boolean currentlyMyMove;
 	boolean gameEnded = false;
 	boolean selfWantsReset = false;
 	boolean strangerWantsReset = false;
+	boolean firstPlayerAlreadyDetermined = false;
 	int moveCounter = 0;
 
 	public TicTacToe(Gui gui) {
@@ -25,108 +37,159 @@ public class TicTacToe {
 		}
 	}
 
-	public boolean handleCommands(String msg, boolean selfSentCommand) {
-		System.out.println(selfSentCommand);
+	public void setChat(Chat chat) {
+		this.chat = chat;
+	}
+
+	public void startGame() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
+			IllegalBlockSizeException, BadPaddingException, IOException {
+		if (gui.mode.equals("s") && !firstPlayerAlreadyDetermined) { // if this user is the server (if he is privileged)
+			if (ThreadLocalRandom.current().nextInt(0, 2) == 0) { // pick random integer between 0 and 1 to
+																	// determine starting player
+				didFirstMove = true; // self is starting
+				currentlyMyMove = true;
+				ownSymbol = "X";
+				strangerSymbol = "O";
+				gui.showNonBlockingMessage("Du darfst nun den ersten Zug machen");
+
+				chat.sendEncryptedMessage("/startinggame sender");
+			} else { // stranger is starting
+				didFirstMove = false;
+				currentlyMyMove = false;
+				ownSymbol = "O";
+				strangerSymbol = "X";
+				gui.showNonBlockingMessage("Der Gegner macht nun den ersten Zug");
+				chat.sendEncryptedMessage("/startinggame receiver");
+			}
+
+			firstPlayerAlreadyDetermined = true;
+			gui.setGameButtonText("reset");
+		} else if (!gui.mode.equals("s") && !firstPlayerAlreadyDetermined) {
+			gui.showNonBlockingMessage("Nur der Server-Nutzer darf ein TicTacToe Spiel starten");
+		} else {
+			gui.showNonBlockingMessage("Es läuft bereits ein Spiel");
+		}
+	}
+
+	public boolean handleCommands(String msg, boolean selfSentCommand)
+			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
+			BadPaddingException, IOException {
 		String[] split = msg.split(" ");
 		boolean msgWasCommand = false;
+		if (!split[0].startsWith("/")) { // if message is not a command, do nothing
+			return msgWasCommand;
+		}
+
+		System.out.println("Received command: " + split[0]);
+		if (split.length > 1) {
+			System.out.println("Command argument: " + split[1]);
+		}
+		System.out.println("Command came from self? " + selfSentCommand);
 
 		if (split[0].equals("/set") && split.length > 1) {
 			msgWasCommand = true;
-			System.out.println("Message was a set-command with argument " + split[1]);
 			Integer currentMove = Integer.valueOf(split[1]); // extract number from command argument
-			if (firstMove) { // set up stuff if it is the first move
-				if (selfSentCommand) {
-					didFirstMove = true;
-					ownSymbol = "X";
-					strangerSymbol = "O";
-				} else {
-					didFirstMove = false;
-					ownSymbol = "O";
-					strangerSymbol = "X";
-				}
-				firstMove = false;
+
+			if (currentMove > 8 || currentMove < 0 || !firstPlayerAlreadyDetermined
+					|| !ticTacToeField[currentMove].equals(" ") || gameEnded) {
+				return msgWasCommand; // if something isn't right, do nothing
 			}
 
-			if (!ticTacToeField[currentMove].equals(" ")) { // if current field is already taken, do nothing
-				return msgWasCommand;
-			}
-			
-			if (gameEnded) {		// if game has ended, do nothing
-				return msgWasCommand;
-			}
 			System.out.println("\n");
 
-			if ((moveCounter % 2 == 0 && didFirstMove) || (moveCounter % 2 == 1 && !didFirstMove)) { // check if its my
-																										// turn
-				if (selfSentCommand) {
-					ticTacToeField[currentMove] = ownSymbol;
-					moveCounter++;
-				}
+			if (currentlyMyMove && selfSentCommand) { // check if its my turn
+				chat.sendEncryptedMessage(msg);
+				ticTacToeField[currentMove] = ownSymbol;
+				moveCounter++;
+				currentlyMyMove = !currentlyMyMove;
 
-			} else if (!selfSentCommand) {
-				if (!selfSentCommand) {
-					ticTacToeField[currentMove] = strangerSymbol;
-					moveCounter++;
-				}
+			} else if(!currentlyMyMove && !selfSentCommand){
+				ticTacToeField[currentMove] = strangerSymbol;
+				moveCounter++;
+				currentlyMyMove = !currentlyMyMove;
 			}
+
+
 			gui.printTicTacToe(ticTacToeField);
 
-
-				for (int winCondition = 0; winCondition < 8; winCondition++) {
-					String[] row = new String[3];
-					for (int winConditionPart = 0; winConditionPart < 3; winConditionPart++) {
-						int coordinate = winConditions[winCondition][winConditionPart]; // get current coordinate for
-																						// possible win-condition
-						String symbol = ticTacToeField[coordinate]; // get the symbol at that place
-						row[winConditionPart] = symbol; // store all three symbols together
-					}
-
-					if (row[0].equals(row[1]) && row[0].equals(row[2]) && !row[0].equals(" ")) { // if all symbols are equal: someone has won
-						gameEnded = true;
-						if (row[0].equals(ownSymbol)) {
-							gui.showNonBlockingMessage(gui.username + " hat gewonnen!");
-							return msgWasCommand;
-						} else if (row[0].equals(strangerSymbol)) {
-							gui.showNonBlockingMessage(gui.strangerUsername + " hat gewonnen!");
-							return msgWasCommand;
-						}
-					}
+			for (int winCondition = 0; winCondition < 8; winCondition++) {
+				String[] row = new String[3];
+				for (int winConditionPart = 0; winConditionPart < 3; winConditionPart++) {
+					int coordinate = winConditions[winCondition][winConditionPart]; // get current coordinate for
+																					// possible win-condition
+					String symbol = ticTacToeField[coordinate]; // get the symbol at that place
+					row[winConditionPart] = symbol; // store all three symbols together
 				}
 
-				int value = ticTacToeField[currentMove].charAt(0);
-				System.out.println(value);
-				if (moveCounter == 9) { // game has ended and noone has won
+				if (row[0].equals(row[1]) && row[0].equals(row[2]) && !row[0].equals(" ")) { // if all symbols are
+																								// equal: someone has
+																								// won
 					gameEnded = true;
-					System.out.println("Game has ended in a draw");
+					if (row[0].equals(ownSymbol)) {
+						gui.showNonBlockingMessage(gui.username + " hat gewonnen!");
+						return msgWasCommand;
+					} else if (row[0].equals(strangerSymbol)) {
+						gui.showNonBlockingMessage(gui.strangerUsername + " hat gewonnen!");
+						return msgWasCommand;
+					}
 				}
-			
-		} else if (split[0].equals("/resetgame")) {
-			if(selfSentCommand) {
+			}
+
+			if (moveCounter == 9) { // game has ended and noone has won
+				gameEnded = true;
+				System.out.println("Game has ended in a draw");
+			}
+
+		} else if (split[0].equals("/resetgame"))
+
+		{
+			if (selfSentCommand) {
 				selfWantsReset = true;
 			} else {
 				strangerWantsReset = true;
+				System.out.println("Stranger wants reset");
+				gui.setGameButtonText("Auch für Reset abstimmen");
 			}
-			
-			if(selfWantsReset && strangerWantsReset) {
+
+			if (selfWantsReset && strangerWantsReset) {
 				resetTicTacToe();
 			}
+
+		} else if (split[0].equals("/startinggame") && split.length > 1 && !selfSentCommand) {
+			if (split[1].equals("receiver")) {
+				gui.showNonBlockingMessage("Ein Spiel wurde gestartet, du darfst anfangen");
+				didFirstMove = true;
+				currentlyMyMove = true;
+				ownSymbol = "X";
+				strangerSymbol = "O";
+			} else if (split[1].equals("sender")) {
+				gui.showNonBlockingMessage("Ein Spiel wurde gestartet, der Gegner fängt an");
+				didFirstMove = false;
+				currentlyMyMove = false;
+				ownSymbol = "O";
+				strangerSymbol = "X";
+			}
+			gui.setGameButtonText("reset");
+
+			firstPlayerAlreadyDetermined = true;
 		}
 
 		return msgWasCommand;
 
 	}
-	
-	public void resetTicTacToe() {		// reset all variables to their default values
+
+	public void resetTicTacToe() { // reset all variables to their default values
 		for (int i = 0; i < 9; i++) {
 			ticTacToeField[i] = " ";
 		}
-		
-		firstMove = true;
+
 		gameEnded = false;
 		selfWantsReset = false;
 		strangerWantsReset = false;
+		firstPlayerAlreadyDetermined = false;
 		moveCounter = 0;
-		
+		gui.setGameButtonText("start");
+
 		gui.printTicTacToe(ticTacToeField);
 	}
 }
