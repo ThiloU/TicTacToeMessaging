@@ -350,9 +350,14 @@ public class Gui {
 						if(tf.getText().startsWith("/")) {
 							showNonBlockingMessage("Prefix \"/\" ist nicht erlaubt");
 						} else {
-							chat.sendEncryptedMessage(tf.getText());
-							printMessage(tf.getText(), true);
-							tf.setText("");
+							if (tf.getText().length() > 2000) {
+								showNonBlockingMessage(
+										"Die Nachricht ist zu lang, sie kann maximal 2000 Zeichen lang sein");
+							} else {
+								chat.sendEncryptedMessage(tf.getText());
+								printMessage(tf.getText(), true);
+								tf.setText("");
+							}
 						}
 					}
 
