@@ -7,6 +7,8 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -21,6 +23,10 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
+/**
+ * This class contains all methods concerning the GUI
+ * 
+ */
 public class Gui {
 	JLabel status = new JLabel();
 	JTextPane textPane = new JTextPane();
@@ -42,27 +48,58 @@ public class Gui {
 	String username;
 	String strangerUsername;
 
+	/**
+	 * Sets the TicTacToe component.
+	 * @param tic The TicTacToe component
+	 */
 	public void setTicTacToe(TicTacToe tic) {
 		this.tic = tic;
 	}
 
+	/**
+	 * Sets the username of the other user.
+	 * 
+	 * @param strangerUsername Username of the other user
+	 */
 	public void setStrangerUsername(String strangerUsername) {
 		this.strangerUsername = strangerUsername;
 	}
 
+	/**
+	 * Sets the Chat component.
+	 * 
+	 * @param chat The Chat component
+	 */
 	public void setChat(Chat chat) {
 		this.chat = chat;
 	}
 
+	/**
+	 * Displays the status of the program, specifying the prefix of the message.
+	 * 
+	 * @param prefix The prefix, e.g. "Status" or "Error"
+	 * @param msg The message to show
+	 */
 	public void setStatus(String prefix, String msg) {
 		status.setText(prefix + ": " + msg);
 	}
 
+	/**
+	 * Displays the status of the program.
+	 * 
+	 * @param msg The message to show
+	 */
 	public void setStatus(String msg) { // Overloading to get optional parameter "prefix"
 		setStatus("Status", msg);
 	}
 	
 	
+	/**
+	 * Sets the text of the Multi-Purpose Button.
+	 * (Used for either "Reset" or "Start Game")
+	 * 
+	 * @param text The text to set
+	 */
 	public void setGameButtonText(String text){
 		startButton.setEnabled(true);
 		if(text.equals("start")) {
@@ -77,11 +114,21 @@ public class Gui {
 		}
 	}
 	
-	
+	/**
+	 * Shows a pop-up message to the user.
+	 * The program only continues when the pop-up is closed by the user.
+	 * @param msg Message to show
+	 */
 	public void showMessage(String msg) {
 		JOptionPane.showMessageDialog(new JFrame(), msg);
 	}
 
+	/**
+	 * Shows a non-blocking pop-up message to the user.
+	 * The program continues execution while the pop-up is open (e.g. Incoming messages still get processed).
+	 * 
+	 * @param msg Message to show
+	 */
 	public void showNonBlockingMessage(String msg) {
 		JOptionPane pane = new JOptionPane(msg);
 		JDialog dialog = pane.createDialog(pane, "Message");
@@ -89,6 +136,21 @@ public class Gui {
 		dialog.setVisible(true);
 	}
 
+	/**
+	 * Prints a message to the GUI and formats it.
+	 * Own messages are displayed on the right, messages from the other user are displayed on the left.
+	 * Also checks if the message contains forbidden characters or exceeds the character limit of 2000 characters.
+	 * 
+	 * @param message String to print
+	 * @param selfIsAuthor True if yourself are the author
+	 * @throws BadLocationException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws IOException
+	 */
 	public void printMessage(String message, boolean selfIsAuthor)
 			throws BadLocationException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException, IOException {
@@ -109,14 +171,27 @@ public class Gui {
 		}
 	}
 
+	/**
+	 * Prints the current TicTacToe game to the GUI.
+	 * 
+	 * @param moves An array storing the current playing field
+	 */
 	public void printTicTacToe(String[] moves) {
 		for (int i = 0; i < 9; i++) {
 			ticTacToeButton[i].setText(moves[i]);
 		}
 	}
 
-	public void setup() {
-		final JFrame setupWindow = new JFrame("Setup"); // create setup window
+	/**
+	 * Draws the Setup window to the screen. 
+	 * As soon as the user exits the Setup, the flag <code>setupDonw</code> is set to true.
+	 * 
+	 * @throws UnknownHostException
+	 */
+	public void setup() throws UnknownHostException {
+		String ownIp = InetAddress.getLocalHost().getHostAddress().toString();	// get the own ip address
+		
+		final JFrame setupWindow = new JFrame("Setup - " + ownIp); // create setup window
 		setupWindow.setLayout(new GridLayout(3, 1));
 		setupWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setupWindow.setSize(300, 300);
@@ -130,7 +205,7 @@ public class Gui {
 		ipAddressInput.setVisible(false); // make it invisible by default
 		ipAddressTooltip.setVisible(false);
 		ipAddressInput.setToolTipText("IP-Addresse des Servers");
-		ipAddressInput.setText("localhost");
+		
 
 		final JTextField portInput = new JTextField(10);
 		final JLabel portTooltip = new JLabel("Serverport");
@@ -224,6 +299,11 @@ public class Gui {
 		//TODO: Amogus
 	}
 
+	/**
+	 * Draws the main GUI window to the screen. It also registers event handlers to handle button presses.
+	 * Here, the user can use the chat and play TicTacToe.
+	 * 
+	 */
 	public void main() {
 		JFrame frame = new JFrame("TicTacToeMessaging");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -350,9 +430,14 @@ public class Gui {
 						if(tf.getText().startsWith("/")) {
 							showNonBlockingMessage("Prefix \"/\" ist nicht erlaubt");
 						} else {
-							chat.sendEncryptedMessage(tf.getText());
-							printMessage(tf.getText(), true);
-							tf.setText("");
+							if (tf.getText().length() > 2000) {
+								showNonBlockingMessage(
+										"Die Nachricht ist zu lang, sie kann maximal 2000 Zeichen lang sein");
+							} else {
+								chat.sendEncryptedMessage(tf.getText());
+								printMessage(tf.getText(), true);
+								tf.setText("");
+							}
 						}
 					}
 

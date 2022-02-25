@@ -10,7 +10,12 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-
+/**
+ * The main class from where the program is started.
+ * 
+ * @author Thilo
+ *
+ */
 public class EncryptedTicTacToe {
 	static Socket connection;
 

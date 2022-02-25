@@ -11,6 +11,12 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.swing.text.BadLocationException;
 
+/**
+*
+* This class contains several methods relating to the chat-functionality.
+*
+*/
+
 public class Chat {
 	Socket connection;
 	Crypt crypt;
@@ -19,6 +25,15 @@ public class Chat {
 	String ownUsername;
 	String strangerUsername;
 
+	/**
+	 * Class Constructor
+	 * 
+	 * @param connection
+	 * @param crypt
+	 * @param gui
+	 * @param ownUsername
+	 * @param tic
+	 */
 	public Chat(Socket connection, Crypt crypt, Gui gui, String ownUsername, TicTacToe tic) {
 		this.connection = connection;
 		this.crypt = crypt;
@@ -27,6 +42,18 @@ public class Chat {
 		this.tic = tic;
 	}
 
+	/**
+	 * Starts the main message listener and distributes the incoming messages to the GUI and to the TicTacToe Command Handler.
+	 * 
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * 
+	 * 
+	 */
 	public void startMessageListener() throws IOException, NoSuchAlgorithmException, InvalidKeyException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		System.out.println("Chatverbindung wurde hergestellt");
@@ -56,6 +83,18 @@ public class Chat {
 	}
 
 		
+	/**
+	 * Waits for incoming bytes on the server socket, then decrypts the message.
+	 * 
+	 * @return Decrypted message as String
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws ClassNotFoundException
+	 */
 	public String receiveEncryptedMessage() throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
 		byte[] msgBytes = receiveBytes();
@@ -63,12 +102,30 @@ public class Chat {
 		return msg;
 	}
 
+	/**
+	 * Encrypts a given string, then sends the encrypted message on the server socket as bytes.
+	 * 
+	 * @param msg String to send
+	 * @throws IOException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public void sendEncryptedMessage(String msg) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		byte[] msgBytes = crypt.encryptMessage(msg);
 		sendBytes(msgBytes);
 	}
 
+	/**
+	 * Waits for an incoming public key and returns the key.
+	 * 
+	 * @return The public Key
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public PublicKey receivePublicKey() throws IOException, ClassNotFoundException {
 		ObjectInputStream dis = new ObjectInputStream(connection.getInputStream()); // creating inputStream to
 																					// read data
@@ -76,6 +133,12 @@ public class Chat {
 		return msg;
 	}
 
+	/**
+	 * Sends a public key.
+	 * 
+	 * @param msg Public Key to send
+	 * @throws IOException
+	 */
 	public void sendPublicKey(PublicKey msg) throws IOException {
 		ObjectOutputStream d = new ObjectOutputStream(connection.getOutputStream()); // create outputStream to send
 																						// messsages on
@@ -83,6 +146,13 @@ public class Chat {
 		d.flush(); // Flushing out internal buffers
 	}
 
+	/**
+	 * Waits for incoming bytes and returns them. This is the basis for all other "receive" Methods.
+	 * 
+	 * @return The received byte array
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public byte[] receiveBytes() throws IOException, ClassNotFoundException {
 		ObjectInputStream dis = new ObjectInputStream(connection.getInputStream()); // creating inputStream to
 																					// read data
@@ -90,6 +160,12 @@ public class Chat {
 		return msg;
 	}
 
+	/**
+	 * Sends bytes. This is the basis for all other "send" Methods.
+	 * 
+	 * @param msg Byte array to send
+	 * @throws IOException
+	 */
 	public void sendBytes(byte[] msg) throws IOException {
 		ObjectOutputStream d = new ObjectOutputStream(connection.getOutputStream()); // create outputStream to send
 																						// messsages on
@@ -97,6 +173,18 @@ public class Chat {
 		d.flush(); // Flushing out internal buffers
 	}
 
+	/**
+	 * Receives the username of the other user and sends own username to the other user.
+	 * 
+	 * @param sendFirst Send your username first
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public void exchangeUsernames(boolean sendFirst)
 			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
 			BadPaddingException, IOException, ClassNotFoundException {

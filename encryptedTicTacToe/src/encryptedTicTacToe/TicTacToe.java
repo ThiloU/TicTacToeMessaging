@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * This class contains the TicTacToe functions 
+ * 
+ */
 public class TicTacToe {
 
 	Gui gui;
@@ -30,6 +34,9 @@ public class TicTacToe {
 	boolean firstPlayerAlreadyDetermined = false;
 	int moveCounter = 0;
 
+	/*
+	 * Class Constructor creating the TicTacToe field.
+	 */
 	public TicTacToe(Gui gui) {
 		this.gui = gui;
 		for (int i = 0; i < 9; i++) {
@@ -37,10 +44,26 @@ public class TicTacToe {
 		}
 	}
 
+	/**
+	 * Sets the Chat component to send the TicTacToe commands on.
+	 * 
+	 * @param chat The Chat component
+	 */
 	public void setChat(Chat chat) {
 		this.chat = chat;
 	}
 
+	/**
+	 * Starts the game of TicTacToe in response to the "Start" Button being pressed.
+	 * It randomly determines a starting player and sends a message to both players to inform them of the starting player.
+	 * 
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws IOException
+	 */
 	public void startGame() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
 			IllegalBlockSizeException, BadPaddingException, IOException {
 		if (gui.mode.equals("s") && !firstPlayerAlreadyDetermined) { // if this user is the server (if he is privileged)
@@ -71,6 +94,21 @@ public class TicTacToe {
 		}
 	}
 
+	/**
+	 * Checks if a given chat message contained a command.
+	 * This also handles all of the TicTacToe game logic and determines if the game ended (either by someone winning or by a draw.
+	 * Valid commands could be <code>/set</code> (followed by a field index), <code>/resetgame</code> or <code>/startgame</code>.
+	 * 
+	 * @param msg The message to parse
+	 * @param selfSentCommand If yourself sent the message
+	 * @return If the message was a command
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws IOException
+	 */
 	public boolean handleCommands(String msg, boolean selfSentCommand)
 			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException,
 			BadPaddingException, IOException {
@@ -178,6 +216,12 @@ public class TicTacToe {
 
 	}
 
+	/**
+	 * Handles reseting the game if both users agree to it.
+	 * Both users must have pressed the "Reset" Button for this method to reset the game.
+	 * It can then be restarted.
+	 * 
+	 */
 	public void resetTicTacToe() { // reset all variables to their default values
 		for (int i = 0; i < 9; i++) {
 			ticTacToeField[i] = " ";

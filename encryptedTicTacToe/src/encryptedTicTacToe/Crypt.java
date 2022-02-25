@@ -8,6 +8,10 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * This class contains methods used for message encryption and decryption
+ * 
+ */
 public class Crypt {
 
 	private SecretKey aesKey;
@@ -16,7 +20,21 @@ public class Crypt {
 	public Crypt() {
 
 	}
-
+	
+	/**
+	 * Generates a symmetric AES encryption key and transmits it to the other client.
+	 * For this, the method waits for the other user to send his public RSA key, then encrypts the AES key using RSA to send the AES key securely.
+	 * 
+	 * @param chat The chat component the communication is taking place on
+	 * @throws IOException
+	 * @throws InvalidKeySpecException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws InvalidKeyException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws ClassNotFoundException
+	 */
 	public void sendSecureConnectionKey(Chat chat)
 			throws IOException, InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException {
@@ -32,6 +50,19 @@ public class Crypt {
 		chat.sendBytes(aesKeyEncrypted); // send encrypted aes-key back to other client
 	}
 
+	/**
+	 * Receives the AES key from the other client.
+	 * For this, a public RSA key is generated and sent to the other user so that he can encrypt and securely send the AES key.
+	 * 
+	 * @param chat The chat component the communication is taking place on
+	 * @throws NoSuchAlgorithmException
+	 * @throws IOException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws InvalidKeyException
+	 * @throws NoSuchPaddingException
+	 * @throws ClassNotFoundException
+	 */
 	public void receiveSecureConnectionKey(Chat chat)
 			throws NoSuchAlgorithmException, IOException, IllegalBlockSizeException, BadPaddingException,
 			InvalidKeyException, NoSuchPaddingException, ClassNotFoundException {
@@ -51,6 +82,17 @@ public class Crypt {
 
 	}
 
+	/**
+	 * Encrypts a given message and converts it from String to Byte array using the previously exchanged cryptographic keys.
+	 * 
+	 * @param msg The String to encrypt
+	 * @return The encrypted message as byte array
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public byte[] encryptMessage(String msg) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		Cipher encryptCipher = Cipher.getInstance("AES"); // initialise encryptor
@@ -61,6 +103,17 @@ public class Crypt {
 		return encryptedMessageBytes; // return encrypted message in bytes ready to be sent
 	}
 
+	/**
+	 * Decrypts a given message and converts it from Byte array to String.
+	 * 
+	 * @param msg The message as Byte array
+	 * @return The decrypted message as String
+	 * @throws InvalidKeyException
+	 * @throws NoSuchAlgorithmException
+	 * @throws NoSuchPaddingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public String decryptMessage(byte[] msg) throws InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 		Cipher decryptCipher = Cipher.getInstance("AES"); // initialise decryptor
